@@ -1,0 +1,21 @@
+import requests
+import pandas as pd
+from bs4 import BeautifulSoup
+for i in range(1,10):
+   url ="https://islamqa.info/en/answers/1/interruption-of-wudu"+str(i)
+   req=requests.get(url)
+   if(req.status_code==200):
+      
+      soup=BeautifulSoup(req.content,'html.parser')
+      questionanswer=soup.findAll(attrs={'class':'content'})
+      Q=questionanswer[0].text.replace('\n',"")
+      QS=soup.find(attrs={'class':'title is-4 is-size-5-touch'}).text.replace('\n',"")
+      QN=int(soup.find(attrs={'class':"subtitle has-text-weight-bold has-title-case cursor-pointer tooltip"}).text.replace('\n',""))
+      S=soup.find(attrs={'class':'subtitle is-6 has-text-weight-bold is-capitalised'})
+      data=[url,QN,QS,Q,S]
+      data.insert(QN,[url,QN,QS,Q,S])
+      print("Data fetched successfuly",i)
+   else:
+       print('URL not found',i)
+df=pd.DataFrame([data],columns=['url','Question No','Question','Question text','Source','temp'])
+df.to_csv('pagedata.csv')
