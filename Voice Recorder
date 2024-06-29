@@ -1,0 +1,76 @@
+import pyaudio
+import wave
+import os
+
+class VoiceRecorder:
+    def __init__(self):
+        self.chunk = 1024  # Record in chunks of 1024 samples
+        self.sample_format = pyaudio.paInt16  # 16 bits per sample
+        self.channels = 2
+        self.rate = 44100  # Record at 44100 samples per second
+        self.p = pyaudio.PyAudio()
+        self.frames = []
+
+    def record(self, seconds):
+        print('Recording...')
+        stream = self.p.open(format=self.sample_format,
+                             channels=self.channels,
+                             rate=self.rate,
+                             frames_per_buffer=self.chunk,
+                             input=True)
+        self.frames = []
+
+        for _ in range(0, int(self.rate / self.chunk * seconds)):
+            data = stream.read(self.chunk)
+            self.frames.append(data)
+
+        stream.stop_stream()
+        stream.close()
+        print('Finished recording.')
+
+    def playback(self):
+        print('Playing back recording...')
+        stream = self.p.open(format=self.sample_format,
+                             channels=self.channels,
+                             rate=self.rate,
+                             output=True)
+        for frame in self.frames:
+            stream.write(frame)
+        stream.stop_stream()
+        stream.close()
+
+    def save(self, filename, format='wav'):
+        if format not in ['wav']:
+            raise ValueError("Unsupported format. Currently, only 'wav' is supported.")
+        
+        wf = wave.open(filename, 'wb')
+        wf.setnchannels(self.channels)
+        wf.setsampwidth(self.p.get_sample_size(self.sample_format))
+        wf.setframerate(self.rate)
+        wf.writeframes(b''.join(self.frames))
+        wf.close()
+        print(f'Saved recording to {filename}')
+
+    def terminate(self):
+        self.p.terminate()
+
+if __name__ == "__main__":
+    recorder = VoiceRecorder()
+    
+    while True:
+        command = input("Enter command (record/playback/save/exit): ").strip().lower()
+        
+        if command == 'record':
+            seconds = int(input("Enter duration of recording in seconds: "))
+            recorder.record(seconds)
+        elif command == 'playback':
+            recorder.playback()
+        elif command == 'save':
+            filename = input("Enter filename to save recording (with .wav extension): ")
+            recorder.save(filename)
+        elif command == 'exit':
+            recorder.terminate()
+            print("Exiting the application.")
+            break
+        else:
+            print("Invalid command. Please enter 'record', 'playback', 'save', or 'exit'.")
